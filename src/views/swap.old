@@ -1,0 +1,99 @@
+import React from "react";
+import Web3 from 'web3'
+//import waviiiLogo from '../assets/img/i3.png'
+import waviii from './img/waviii.json'
+//import LinearProgress from './Loader'
+
+// reactstrap components
+import { Card, CardHeader, CardBody, Row, Col } from "reactstrap";
+
+class Swap extends React.Component {
+  async componentWillMount() {
+    await this.loadWeb3()
+    await this.loadBlockchainData()
+  }
+
+  async loadWeb3() {
+    if (window.ethereum) {
+      window.web3 = new Web3(window.ethereum)
+      await window.ethereum.enable()
+    }
+    else if (window.web3) {
+      window.web3 = new Web3(window.web3.currentProvider)
+    }
+    else {
+      window.alert('Non-Ethereum browser detected. You should consider trying MetaMask!')
+    }
+  }
+
+  async loadBlockchainData() {
+    const web3 = window.web3
+    const accounts = await web3.eth.getAccounts()
+    this.setState({ account: accounts[0] })
+    const TokenAddress = "0xBA00868912Af1a409F11E9c2B5d3a9376Cb3C2E2" // waviii Token Contract Address
+    const waviiiToken = new web3.eth.Contract(waviii.abi, TokenAddress)
+    this.setState({ waviiiToken: waviiiToken })
+    const balance = await waviiiToken.methods.balanceOf(this.state.account).call()
+    this.setState({ balance: web3.utils.fromWei(balance.toString(), 'Ether') })
+    const transactions = (await Promise.all([
+      waviiiToken.getPastEvents('Transfer', { fromBlock: 0, toBlock: 'latest', filter: { from: this.state.account } }), 
+      waviiiToken.getPastEvents('Transfer', { fromBlock: 0, toBlock: 'latest', filter: { to: this.state.account } })])).flat()
+    this.setState({ transactions: transactions })
+    console.log(transactions)
+  }
+
+  transfer(recipient, amount) {
+    this.state.waviiiToken.methods.transfer(recipient, amount).send({ from: this.state.account }).on('transactionHash', (hash) => {
+    this.setState({ loading: true })
+    }).on('confirmation', (reciept) => {
+      this.setState({ loading: false })
+      window.location.reload()
+      
+      this.notify("tc")
+    })
+  }
+
+  constructor(props) {
+    super(props)
+    this.state = {
+      account: '',
+      waviiiToken: null,
+      balance: 0,
+      transactions: [],
+      loading: undefined
+    }
+
+    this.transfer = this.transfer.bind(this)
+  }
+
+  render() {
+    return (
+      <>
+        <div className="content">
+          <Row>
+            <Col md="12">
+              <Card>
+                <CardHeader>
+
+                <a  
+                    className="title right"
+                    href={`https://etherscan.io/address/${this.state.account}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >
+                      <span>{this.state.account}</span>  
+                  </a>
+                </CardHeader>
+                <CardBody className="all-icons">
+
+                </CardBody>
+              </Card>
+            </Col>
+          </Row>
+        </div>
+      </>
+    );
+  }
+}
+
+export default Swap;
