@@ -124,7 +124,7 @@ class Sidebar extends React.Component {
               className="active-pro"
             >
               <ReactstrapNavLink
-                href="https://waviii.io/product/black-dashboard-pro-react?ref=bdr-user-archive-sidebar-upgrade-pro"
+                href="https://github.com/luc1dLife"
               >
                 <i className="wav-icons icon-spaceship" />
                 <p>Hire a Blockchain Ninja!</p>
